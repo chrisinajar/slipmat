@@ -9,9 +9,12 @@ var registerNull = function() {
 	throw new Error('Cannot call registerPlugin manually');
 }
 slipmat.registerPlugin = registerNull;
-slipmat.loadPluginMetadata = function(name) {
+slipmat.loadPluginMetadata = function(name, callback) {
 	if (!slipmat.modules[name])
 		throw new Error(name + ' not found in the module list');
+
+	if (!callback)
+		callback = function(){};
 
 	if (slipmat.modules[name].loaded)
 		return;
@@ -21,12 +24,14 @@ slipmat.loadPluginMetadata = function(name) {
 		slipmat.modules[name].loaded = true;
 
 		slipmat.registerPlugin = registerNull;
+
+		callback();
 	};
 
 	var module = slipmat.modules[name];
-	switch (module.source.type) {
+	switch (module.type) {
 		case 'github':
-			$.getScript('https://raw.github.com/' + module.source.src + '/master/slipmat.js');
+			$.getScript('https://raw.github.com/' + module.src + '/master/slipmat.js');
 	}
 }
 
