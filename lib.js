@@ -8,32 +8,61 @@
 var registerNull = function() {
 	throw new Error('Cannot call registerPlugin manually');
 }
-slipmat.registerPlugin = registerNull;
-slipmat.loadPluginMetadata = function(name, callback) {
-	if (!slipmat.modules[name])
-		throw new Error(name + ' not found in the module list');
+var fnull = function(){};
+var loadScript = slipmat.loadScript;
 
-	if (!callback)
-		callback = function(){};
+$.extend(slipmat, {
+	registerPlugin: registerNull,
 
-	if (slipmat.modules[name].loaded)
-		return;
+	loadPluginMetadata: function(name, callback) {
+		if (!slipmat.modules[name])
+			throw new Error(name + ' not found in the module list');
 
-	slipmat.registerPlugin = function(options) {
-		slipmat.modules[name] = options;
-		slipmat.modules[name].loaded = true;
+		if (!callback)
+			callback = fnull;
 
-		slipmat.registerPlugin = registerNull;
+		if (slipmat.modules[name].loaded)
+			return;
 
-		callback();
-	};
+		slipmat.registerPlugin = function(options) {
+			slipmat.modules[name] = options;
+			slipmat.modules[name].loaded = true;
 
-	var module = slipmat.modules[name];
-	switch (module.type) {
-		case 'github':
-			$.getScript('https://raw.github.com/' + module.src + '/master/slipmat.js');
+			slipmat.registerPlugin = registerNull;
+
+			callback();
+		};
+
+		var module = slipmat.modules[name];
+		switch (module.type) {
+			case 'github':
+				$.getScript('https://raw.github.com/' + module.src + '/master/slipmat.js');
+		}
+	},
+
+	load: function(name, callback) {
+		if (!callback)
+			callback = fnull;
+
+		flow.exec(
+			function() {
+				slipmat.loadPluginMetadata(name, this);
+			}, function() {
+				if (slipmat.modules[name].deferred) {
+					slipmat.done = function() {
+						callback();
+						slipmat.done = fnull;
+					};
+					callback = fnull;
+				}
+				slipmat.loadScript({
+					src: slipmat.modules[name].file,
+					callback: callback
+				});
+			}
+		);
 	}
-}
+});
 
 // iterate through autoload list
 var autoLoad = [];
@@ -42,5 +71,10 @@ if (localStorage.slipmat_modules) {
 	if ((!autoLoad instanceof Array))
 		throw new Error('Autoload list is not an array D:');
 }
+
+for (i in autoLoad) {
+	slipmat.load(autoLoad[i]);
+}
+
 })(window.slipmat);
 

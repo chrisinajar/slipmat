@@ -80,12 +80,6 @@ var baseUrl = "https://raw.github.com/chrisinajar/slipmat/master/";
 if (localStorage.slipmat_devurl)
 	baseUrl = localStorage.slipmat_devurl;
 
-if (localStorage.slipmat_modules) {
-	var module_ar = JSON.parse(localStorage.slipmat_modules);
-	autoLoad = autoLoad.concat(module_ar);
-}
-
-
 var slipmat = (function() {
 	var slipmat = {};
 
@@ -98,6 +92,7 @@ var slipmat = (function() {
 			src: baseUrl+"/slipmat.js"
 		});
 	};
+	slipmat.loadScript = loadScript;
 
 	var count = 2; // manual count of how many scripts we're about to load...
 	var handler = function() {
